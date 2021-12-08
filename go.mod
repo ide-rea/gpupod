@@ -1,4 +1,4 @@
-module gpupod
+module github.com/ide-rea/gpupod
 
 go 1.16
 
