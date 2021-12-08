@@ -1,7 +1,13 @@
 ## gpupod
-gpupod is simple tool to list and watch GPU pod in kubernetes cluster.
+gpupod is simple tool to list and watch NVIDIA GPU pod in kubernetes cluster.
 
-### usage
+### Install
+#### Linux
+```bash
+GOBIN=/usr/local/bin/ go install github.com/ide-rea/gpupod
+```
+
+### Usage
 ```
 Usage:
 gpupod [flags]
