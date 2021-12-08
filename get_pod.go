@@ -101,12 +101,12 @@ func listWatchGpuPod() {
 }
 
 func extractPodInfo(pod *corev1.Pod) *PodInfo {
-	var gpuCards int
+	var gpuCards int64
 	var images []string
 	for _, c := range pod.Spec.Containers {
 		if quantity, ok := c.Resources.Requests["nvidia.com/gpu"]; ok {
 			images = append(images, c.Image)
-			gpuCards += quantity.Size()
+			gpuCards += quantity.Value()
 		}
 	}
 	if gpuCards == 0 {
@@ -117,7 +117,7 @@ func extractPodInfo(pod *corev1.Pod) *PodInfo {
 		node:        pod.Spec.NodeName,
 		name:        pod.Name,
 		image:       strings.Join(images, "|"),
-		gpuUsage:    strconv.Itoa(gpuCards),
+		gpuUsage:    strconv.Itoa(int(gpuCards)),
 		reason:      pod.Status.Reason,
 		status:      pod.Status.Phase,
 		createdTime: pod.GetObjectMeta().GetCreationTimestamp().Time,
@@ -148,9 +148,9 @@ func (t SortablePodInfos) SortByFieldName(name string) {
 	for k := 0; k < len(t); k++ {
 		if t[k].status == status {
 			j := k
-			v := reflect.ValueOf(t[j]).FieldByName(name).String()
+			v := reflect.ValueOf(t[j]).Elem().FieldByName(name).String()
 			for j > s {
-				if v < reflect.ValueOf(t[j-1]).FieldByName(name).String() {
+				if v < reflect.ValueOf(t[j-1]).Elem().FieldByName(name).String() {
 					t[j], t[j-1] = t[j-1], t[j]
 					j--
 				} else {
