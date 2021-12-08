@@ -64,7 +64,7 @@ func listWatchGpuPod() {
 		if !successPod && pod.Status.Phase == corev1.PodSucceeded {
 			continue
 		}
-		if podInfo := extractPodInfo(pod); podInfo != nil {
+		if podInfo := extractPodInfo(&pod); podInfo != nil {
 			podInfos = append(podInfos, podInfo)
 		}
 	}
@@ -92,7 +92,7 @@ func listWatchGpuPod() {
 		for {
 			event := <-w.ResultChan()
 			pod := event.Object.(*corev1.Pod)
-			if podInfo := extractPodInfo(*pod); podInfo != nil {
+			if podInfo := extractPodInfo(pod); podInfo != nil {
 				printer.PrintRow(podInfo)
 				writer.Flush()
 			}
@@ -100,7 +100,7 @@ func listWatchGpuPod() {
 	}
 }
 
-func extractPodInfo(pod corev1.Pod) *PodInfo {
+func extractPodInfo(pod *corev1.Pod) *PodInfo {
 	var gpuCards int
 	var images []string
 	for _, c := range pod.Spec.Containers {
