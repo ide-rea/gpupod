@@ -9,15 +9,17 @@ GOBIN=/usr/local/bin/ go install github.com/ide-rea/gpupod
 
 ### Usage
 ```
+gpupod is a tool to list/watch NVIDIA GPU pod
+
 Usage:
 gpupod [flags]
 
 Flags:
--t, --createdTime         with pod created time
+-t, --createdTime         show pod created time(default without created time)
 -h, --help                help for gpupod
--k, --kubeconfig string   kubernetes config path (default "/Users/zhangxiaoyu15/.kube/config")
--r, --reason              with pod created time
--s, --success-pod         with success pod
--w, --watch               watch gpu pod
+-k, --kubeconfig string   kubernetes config path (default "/path/to/home/.kube/config")
+-r, --reason              show status reason(default without status reason)
+-s, --success-pod         list pod include success pod(default not list success pod)
+-w, --watch               watch gpu pod(default only list pod)
 ```
 
