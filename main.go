@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"k8s.io/klog"
 	"os"
 	"path"
 
@@ -21,7 +23,11 @@ var reason bool
 var successPod bool
 var watch bool
 
+
 func main() {
+	klogFlagset := flag.NewFlagSet("log", flag.ExitOnError)
+	klog.InitFlags(klogFlagset)
+	rootCmd.Flags().AddGoFlagSet(klogFlagset)
 	home, _ := os.UserHomeDir()
 	rootCmd.Flags().BoolVarP(&createdTime, "createdTime", "t", false, "show pod created time(default without created time)")
 	rootCmd.Flags().StringVarP(&kubeConfig, "kubeconfig", "k", path.Join(home, "./.kube", "config"), "kubernetes config path")
