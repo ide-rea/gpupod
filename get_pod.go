@@ -11,8 +11,10 @@ import (
 
 	"github.com/liggitt/tabwriter"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	pkgwatch "k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -48,6 +50,7 @@ type SortablePodInfos []*PodInfo
 
 func listWatchGpuPod() {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeConfig)
+	config.Timeout = time.Second * time.Duration(timeout)
 	if err != nil {
 		panic(err)
 	}
@@ -80,9 +83,10 @@ func listWatchGpuPod() {
 		printer.PrintRow(podInfo)
 	}
 	writer.Flush()
+	accessor := meta.NewAccessor()
 	if watch {
 		rv := ""
-		if rv, err = meta.NewAccessor().ResourceVersion(podList); err != nil {
+		if rv, err = accessor.ResourceVersion(podList); err != nil {
 			panic(err)
 		}
 		w, err := clientset.CoreV1().Pods("").Watch(context.TODO(), metav1.ListOptions{ResourceVersion: rv})
@@ -90,8 +94,38 @@ func listWatchGpuPod() {
 			panic(err)
 		}
 		for {
-			event := <-w.ResultChan()
+			event, ok := <-w.ResultChan()
+			if !ok {
+				retry := 3
+				for {
+					if retry == 0 {
+						panic(err)
+					}
+					w, err = clientset.CoreV1().Pods("").Watch(context.TODO(), metav1.ListOptions{ResourceVersion: rv})
+					retry--
+					if apierrors.IsGone(err) || apierrors.IsResourceExpired(err) {
+						rv = ""
+						continue
+					} else if err != nil {
+						continue
+					} else {
+						break
+					}
+				}
+				continue
+			}
+			if event.Type == pkgwatch.Error {
+				continue
+			}
+			if event.Type == pkgwatch.Bookmark {
+				rv, err = accessor.ResourceVersion(event.Object)
+				continue
+			}
 			pod := event.Object.(*corev1.Pod)
+			rv, err = accessor.ResourceVersion(pod)
+			if err != nil {
+				continue
+			}
 			if podInfo := extractPodInfo(pod); podInfo != nil {
 				printer.PrintRow(podInfo)
 				writer.Flush()
